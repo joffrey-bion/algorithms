@@ -2,22 +2,29 @@ package org.hildan.algorithms.search.astar;
 
 import java.util.Map;
 
-final class NodeData<T> implements Comparable<NodeData<T>> {
+/**
+ * Contains node-specific data for AStar algorithm.
+ *
+ * @param <I>
+ *         the node ID type
+ */
+final class NodeData<I> implements Comparable<NodeData<I>> {
 
-    private final T nodeId;
-    private final Map<T, Double> heuristic;
+    private final I nodeId;
+
+    private final Map<I, Double> heuristic;
 
     private double g;  // g is distance from the source
-    private double h;  // h is the heuristic of destination.
+
     private double f;  // f = g + h
 
-    public NodeData (T nodeId, Map<T, Double> heuristic) {
+    public NodeData(I nodeId, Map<I, Double> heuristic) {
         this.nodeId = nodeId;
         this.g = Double.MAX_VALUE;
         this.heuristic = heuristic;
     }
 
-    public T getNodeId() {
+    public I getNodeId() {
         return nodeId;
     }
 
@@ -29,21 +36,17 @@ final class NodeData<T> implements Comparable<NodeData<T>> {
         this.g = g;
     }
 
-    public void calcF(T destination) {
-        this.h = heuristic.get(destination);
-        this.f = g + h;
-    }
-
-    public double getH() {
-        return h;
-    }
-
     public double getF() {
         return f;
     }
 
+    public void calcF(I destination) {
+        double h = heuristic.get(destination);
+        this.f = g + h;
+    }
+
     @Override
-    public int compareTo(NodeData<T> that) {
+    public int compareTo(NodeData<I> that) {
         if (this.getF() > that.getF()) {
             return 1;
         }

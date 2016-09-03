@@ -9,28 +9,29 @@ import java.util.NoSuchElementException;
 /**
  * The graph represents an undirected graph.
  *
- * @param <T>
+ * @param <I>
+ *         the node ID type
  */
-final class GraphAStar<T> implements Iterable<T> {
+final class GraphAStar<I> implements Iterable<I> {
     /**
      * A map from the nodeId to outgoing edge.
      * An outgoing edge is represented as a tuple of NodeData and the edge length
      */
-    private final Map<T, Map<NodeData<T>, Double>> graph;
+    private final Map<I, Map<NodeData<I>, Double>> graph;
 
     /**
      * A map of heuristic from a node to each other node in the graph.
      */
-    private final Map<T, Map<T, Double>> heuristicMap;
+    private final Map<I, Map<I, Double>> heuristicMap;
 
     /**
      * A map between nodeId and nodedata.
      */
-    private final Map<T, NodeData<T>> nodeIdNodeData;
+    private final Map<I, NodeData<I>> nodeIdNodeData;
 
-    public GraphAStar(Map<T, Map<T, Double>> heuristicMap) {
+    public GraphAStar(Map<I, Map<I, Double>> heuristicMap) {
         if (heuristicMap == null) {
-            throw new NullPointerException("The huerisic map should not be null");
+            throw new NullPointerException("The heuristic map should not be null");
         }
         graph = new HashMap<>();
         nodeIdNodeData = new HashMap<>();
@@ -44,7 +45,7 @@ final class GraphAStar<T> implements Iterable<T> {
      * @param nodeId
      *         the node to be added
      */
-    public void addNode(T nodeId) {
+    public void addNode(I nodeId) {
         if (nodeId == null) {
             throw new IllegalArgumentException("Cannot add a null node");
         }
@@ -53,7 +54,7 @@ final class GraphAStar<T> implements Iterable<T> {
         }
 
         graph.put(nodeId, new HashMap<>());
-        nodeIdNodeData.put(nodeId, new NodeData<T>(nodeId, heuristicMap.get(nodeId)));
+        nodeIdNodeData.put(nodeId, new NodeData<I>(nodeId, heuristicMap.get(nodeId)));
     }
 
     /**
@@ -68,7 +69,7 @@ final class GraphAStar<T> implements Iterable<T> {
      * @param length
      *         the length of the edge.
      */
-    public void addEdge(T source, T destination, double length) {
+    public void addEdge(I source, I destination, double length) {
         if (source == null || destination == null) {
             throw new NullPointerException("The first nor second node can be null.");
         }
@@ -91,7 +92,7 @@ final class GraphAStar<T> implements Iterable<T> {
      *
      * @return An immutable view of edges leaving that node
      */
-    public Map<NodeData<T>, Double> edgesFrom(T nodeId) {
+    public Map<NodeData<I>, Double> edgesFrom(I nodeId) {
         if (nodeId == null) {
             throw new NullPointerException("The input node should not be null.");
         }
@@ -113,7 +114,7 @@ final class GraphAStar<T> implements Iterable<T> {
      *
      * @return the nodeData from the
      */
-    public NodeData<T> getNodeData(T nodeId) {
+    public NodeData<I> getNodeData(I nodeId) {
         if (nodeId == null) {
             throw new NullPointerException("The nodeid should not be empty");
         }
@@ -129,7 +130,7 @@ final class GraphAStar<T> implements Iterable<T> {
      * @return an Iterator.
      */
     @Override
-    public Iterator<T> iterator() {
+    public Iterator<I> iterator() {
         return graph.keySet().iterator();
     }
 }

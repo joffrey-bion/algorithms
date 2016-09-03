@@ -44,9 +44,7 @@ public class AStar<T> {
      * @return the path from source to destination
      */
     public List<T> astar(T source, T destination) {
-        /**
-         * http://stackoverflow.com/questions/20344041/why-does-priority-queue-has-default-initial-capacity-of-11
-         */
+        // http://stackoverflow.com/questions/20344041/why-does-priority-queue-has-default-initial-capacity-of-11
         final Queue<NodeData<T>> openQueue = new PriorityQueue<NodeData<T>>(11, new NodeComparator());
 
         NodeData<T> sourceNodeData = graph.getNodeData(source);
