@@ -3,7 +3,8 @@ package org.hildan.algorithms.graphs
 data class Edge(val node1: Int, val node2: Int)
 
 /**
- * Builds a graph based on the given edges, and ensures all ndoes
+ * Builds a graph based on the given edges, and ensures all nodes are present from 0 to [nNodes]-1 (even if they have
+ * no edges).
  */
 fun buildFullGraph(
     nNodes: Int,
@@ -27,6 +28,9 @@ fun buildFullGraph(
     return graph
 }
 
+/**
+ * Builds a graph based on the given edges.
+ */
 fun buildGraph(
     edges: List<Edge>,
     directed: Boolean = true,
@@ -46,12 +50,19 @@ fun buildGraph(
     return graph
 }
 
+/**
+ * Returns the list of node IDs of the provided graph in topological order.
+ * The given [reversedGraph] is a map of each node ID to the set of its parents (hence "reversed").
+ */
 fun topologicalSort(reversedGraph: Map<Int, Set<Int>>): List<Int> {
     val mReversedGraph = reversedGraph.mapValuesTo(HashMap()) { it.value.toMutableSet() }
     val result = mutableListOf<Int>()
     while (mReversedGraph.isNotEmpty()) {
+        // find first node without parent (will be first in topology)
         val noParentNode = mReversedGraph.entries.first { it.value.isEmpty() }.key
+        // remove it from the graph (as key)
         mReversedGraph.remove(noParentNode)
+        // remove it from the graph (as parent of other nodes)
         mReversedGraph.values.forEach { it.remove(noParentNode) }
         result.add(noParentNode)
     }
