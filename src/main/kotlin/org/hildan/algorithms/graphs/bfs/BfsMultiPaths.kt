@@ -6,7 +6,7 @@ import java.util.LinkedList
 private data class BfsMultiNode(val id: Int, val parent: BfsMultiNode?, val depth: Int)
 
 fun bfsMultiPaths(graph: Map<Int, Set<Int>>, start: Int, goals: Set<Int>): Set<BFSResult.Found> {
-    val open = LinkedList<BfsMultiNode>()
+    val open = LinkedList<BfsMultiNode>() // ArrayDeque is "experimental" and cannot be used on Codingame (1.3.x)
     val closed = HashSet<Int>()
     open.add(BfsMultiNode(start, null, 0))
 
