@@ -3,6 +3,11 @@ package org.hildan.algorithms.graphs.dijkstra
 import java.util.HashSet
 import java.util.PriorityQueue
 
+/*
+WARNING: Dijkstra cannot be used in a Graph with negative weights.
+Also, if the Graph is not weighted, prefer BFS (which is equivalent but simpler).
+ */
+
 data class DirectedEdge(
     val dest: Int,
     val length: Int
