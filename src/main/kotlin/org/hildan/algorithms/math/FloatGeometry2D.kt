@@ -25,7 +25,10 @@ data class Point(val x: Double, val y: Double) {
 
 typealias Segment = Pair<Point, Point>
 
-// ax + by = c
+/**
+ * Defines a line by the equation "ax + by = c".
+ * Note that a and b cannot both be 0.
+ */
 data class Line(
     val a: Double,
     val b: Double,
@@ -34,6 +37,8 @@ data class Line(
     init {
         require(a != .0 || b != .0) { "a and b cannot both be 0 (equation 0x + 0y = $c (c) is not a line)" }
     }
+
+    val slope: Double get() = if (b == .0) Double.POSITIVE_INFINITY else -a/b
 
     override fun toString(): String = "$a * x + $b * y = $c"
 
@@ -99,7 +104,13 @@ fun Segment.bisector(): Line {
     )
 }
 
-fun Line.intercept(line: Line): Point {
+/**
+ * Returns the intersection point, or null if both lines are parallel.
+ */
+fun Line.intercept(line: Line): Point? {
+    if (isParallelTo(line)) {
+        return null
+    }
     val (a1, b1, c1) = this
     val (a2, b2, c2) = line
     val x = (b1 * c2 - b2 * c1) / (b1 * a2 - b2 * a1)
@@ -107,7 +118,16 @@ fun Line.intercept(line: Line): Point {
     return Point(x, y)
 }
 
-fun Segment.intercept(line: Line): Point = toLine().intercept(line)
+fun Segment.intercept(line: Line): Point? {
+    if ((first > line && second > line) || (first < line && second < line)) {
+        return null // the segment doesn't cross the line, both points are on the same side of it
+    }
+    return toLine().intercept(line)
+}
+
+fun Line.isParallelTo(line: Line): Boolean = slope == line.slope
+
+fun Segment.isParallelTo(line: Line): Boolean = toLine().isParallelTo(line)
 
 // vertices rotating counter-clockwise, same for segments
 data class Polygon(
@@ -137,21 +157,20 @@ data class Polygon(
     fun centroid() = Point(vertices.map { it.x }.average(), vertices.map { it.y }.average())
 
     fun cut(line: Line, sideToKeep: Side): Polygon {
-        Random.nextBoolean()
         val keptVertices = mutableListOf<Point>()
         for (i in vertices.indices) {
             val p = this[i]
             if (p.onWantedSideOf(line, sideToKeep)) {
                 val prev = this[i - 1]
                 if (!prev.onWantedSideOf(line, sideToKeep)) {
-                    val cutPoint = (prev to p).intercept(line)
+                    val cutPoint = (prev to p).intercept(line)!!
                     keptVertices.addIfDifferentFromLast(cutPoint)
                 }
                 keptVertices.addIfDifferentFromLast(p)
             } else {
                 val prev = this[i - 1]
                 if (prev.onWantedSideOf(line, sideToKeep)) {
-                    val cutPoint = (prev to p).intercept(line)
+                    val cutPoint = (prev to p).intercept(line)!!
                     keptVertices.addIfDifferentFromLast(cutPoint)
                 }
             }
