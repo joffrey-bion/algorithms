@@ -4,7 +4,6 @@ import java.util.Objects
 import kotlin.math.abs
 import kotlin.math.hypot
 import kotlin.math.round
-import kotlin.random.Random
 
 data class Point(val x: Double, val y: Double) {
 
@@ -21,6 +20,10 @@ data class Point(val x: Double, val y: Double) {
     }
 
     override fun hashCode(): Int = Objects.hash(x, y)
+
+    companion object {
+        val ORIGIN = Point(0.0, 0.0)
+    }
 }
 
 typealias Segment = Pair<Point, Point>
@@ -38,17 +41,27 @@ data class Line(
         require(a != .0 || b != .0) { "a and b cannot both be 0 (equation 0x + 0y = $c (c) is not a line)" }
     }
 
+    /** [Double.POSITIVE_INFINITY] if this line is vertical. */
     val slope: Double get() = if (b == .0) Double.POSITIVE_INFINITY else -a/b
+
+    fun isParallelTo(line: Line): Boolean = (b == .0 && line.b == .0) || slope == line.slope
 
     override fun toString(): String = "$a * x + $b * y = $c"
 
     companion object {
+        fun of(p1: Point, p2: Point): Line = Line(
+            a = p1.y - p2.y,
+            b = p2.x - p1.x,
+            c = p2.x * p1.y - p1.x * p2.y
+        )
         fun verticalThrough(point: Point) = Line(1.0, 0.0, point.x)
         fun horizontalThrough(point: Point) = Line(0.0, 1.0, point.y)
         fun diagonalAscendingThrough(point: Point) = Line(1.0, -1.0, point.x - point.y)
         fun diagonalDescendingThrough(point: Point) = Line(1.0, 1.0, point.x + point.y)
     }
 }
+
+data class Ray(val start: Point, val target: Point)
 
 fun Point.distanceTo(other: Point) = hypot(x - other.x, y - other.y)
 
@@ -84,15 +97,7 @@ fun Segment.midPoint(): Point {
     return Point((x1 + x2) / 2, (y1 + y2) / 2)
 }
 
-fun Segment.toLine(): Line {
-    val (x1, y1) = this.first
-    val (x2, y2) = this.second
-    return Line(
-        a = y1 - y2,
-        b = x2 - x1,
-        c = x2 * y1 - x1 * y2
-    )
-}
+fun Segment.toLine(): Line = Line.of(first, second)
 
 fun Segment.bisector(): Line {
     val (x1, y1) = this.first
@@ -111,6 +116,7 @@ fun Line.intercept(line: Line): Point? {
     if (isParallelTo(line)) {
         return null
     }
+    // FIXME what about when both lines are the same line?
     val (a1, b1, c1) = this
     val (a2, b2, c2) = line
     val x = (b1 * c2 - b2 * c1) / (b1 * a2 - b2 * a1)
@@ -125,9 +131,20 @@ fun Segment.intercept(line: Line): Point? {
     return toLine().intercept(line)
 }
 
-fun Line.isParallelTo(line: Line): Boolean = slope == line.slope
+fun Segment.intercept(ray: Ray): Point? {
+    TODO("ray interception not implemented")
+    // Note that we should consider when the ray overlaps completely with this segment (parallel + ON it)
+    // Should we return the segment as intersection? throw an exception?
+}
 
 fun Segment.isParallelTo(line: Line): Boolean = toLine().isParallelTo(line)
+
+fun Point.rayTowards(point: Point): Ray {
+    if (this == point) {
+        throw IllegalArgumentException("Cannot define a half-line from 2 identical points")
+    }
+    return Ray(this, point)
+}
 
 // vertices rotating counter-clockwise, same for segments
 data class Polygon(
@@ -136,6 +153,9 @@ data class Polygon(
     init {
         require(vertices.size >= 3) { "A polygon must have at least 3 vertices, got ${vertices.size}: $vertices" }
     }
+
+    val edges: List<Segment>
+        get() = vertices.zipWithNext() + (vertices.last() to vertices.first())
 
     val width: Double
         get() = vertices.map { it.x }.let { it.max()!! - it.min()!! }
@@ -150,8 +170,7 @@ data class Polygon(
         get() = vertices.map { it.x - it.y }.let { it.max()!! - it.min()!! }
 
     fun area(): Double {
-        val wrappingPairs = vertices.zipWithNext() + (vertices.last() to vertices.first())
-        return abs(wrappingPairs.fold(.0) { a, (p1, p2) -> a + (p1.x * p2.y - p1.y * p2.x) } / 2)
+        return abs(edges.fold(.0) { a, (p1, p2) -> a + (p1.x * p2.y - p1.y * p2.x) } / 2)
     }
 
     fun centroid() = Point(vertices.map { it.x }.average(), vertices.map { it.y }.average())
@@ -176,6 +195,23 @@ data class Polygon(
             }
         }
         return Polygon(keptVertices)
+    }
+
+    fun intercept(line: Line): List<Point> = edges.mapNotNull { it.intercept(line) }
+
+    operator fun contains(point: Point): Boolean {
+        val ray = point.rayTowards(Point.ORIGIN)
+        // FIXME we should also consider when the ray is EXACTLY going along a whole edge, overlapping completely
+        val intersectionPoints = edges.mapNotNull {
+            // FIXME when the ray intercepts the polygon exactly ON one of the vertices, we should count it only once
+            //  (not for both edges) when actually going in or out of the polygon, but twice when staying on the same side.
+            //  One way to do that is to count the point only if the other end of the edge is on a given "side" of the ray.
+            //  This way if both edges are on the same side we count them an even number of times, and if there is an edge
+            //  on each side we count it exactly once. This leads to the desired behaviour. It is as if the ray was slightly
+            //  above (or below) the vertex, depending on the side we choose, so we avoid the special case.
+            it.intercept(ray)
+        }
+        return intersectionPoints.size % 2 == 1
     }
 
     private fun MutableList<Point>.addIfDifferentFromLast(p: Point) {
